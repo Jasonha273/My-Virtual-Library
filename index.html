@@ -1,0 +1,109 @@
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>My Library</title>
+        <style>
+            body { font-family: Arial, sans-serif; max-width: 800px; margin: 40px auto; padding: 0 20px; background-color: #f4f4f9; }
+        h1 { color: #333; border-bottom: 2px solid #5c6bc0; padding-bottom: 10px; }
+        .book-card { background: white; padding: 15px; margin: 10px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center; }
+        .book-info h3 { margin: 0 0 5px 0; color: #1a237e; }
+        .book-info p { margin: 2px 0; color: #555; font-size: 0.9em; }
+        .status-badge { background-color: #e8eaf6; color: #3f51b5; padding: 5px 10px; border-radius: 20px; font-weight: bold; font-size: 0.8em; }
+        </style>
+    </head>
+    <body>
+        <h1>My Personal Library📚</h1>
+
+
+        <div class="form-container">
+            <h2>Add a New Book</h2>
+            <form id="addBookForm">
+                <div class="form-group">
+                    <label for="title">Book Title</label>
+                    <input type="text" id="title" required placeholder="e.g., No Longer Human">
+                </div>
+                <div class="form-group">
+                    <label for="author">Author</label>
+                    <input type="text" id="author" required placeholder="e.g., Osamu Dazai">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="pages">On Page</label>
+                        <input type="number" id="pages" required min="0" placeholder="177">
+                    </div>
+                    <div class="form-group">
+                        <label for="status">Reading Status</label>
+                        <select id="status">
+                            <option value="Not Read">Not Read</option>
+                            <option value="Reading">Reading</option>
+                            <option value="Read">Read</option>
+                        </select>
+                    </div>
+                </div>
+                <button type="submit">Add to Bookshelf</button>
+            </form>
+        </div>
+
+        <div id="bookshelf" >Loading your books...</div>
+        <script>
+            const API_URL = 'http://127.0.0.1:5000/books';
+            async function fetchBooks() {
+                try {
+                    const response = await fetch('http://127.0.0.1:5000/books');
+                    const books = await response.json();
+                    const bookshelf = document.getElementById('bookshelf');
+                    bookshelf.innerHTML = '';
+                    if(books.length === 0){
+                        bookshelf.innerHTML= '<p>No books found in my library.</p>';
+                    }
+                    books.forEach(book =>{
+                        const bookCard = `
+                        <div class="book-card">
+                            <div class="book-info">
+                                <h3>${book.title}</h3>
+                                <p><strong>Author:</strong> ${book.author}</p>
+                                <p><strong>On Page:</strong> ${book.pages}</p>
+                            </div>
+                            <span class="status-badge">${book.status}</span>
+                        </div>
+                    `;
+                    bookshelf.innerHTML += bookCard;
+                    });
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                } catch (error) {
+                console.error("Error fetching books:", error);
+                document.getElementById('bookshelf').innerHTML = '<p style="color: red;">Could not connect to the library API server. Is Flask running?</p>';
+            }
+        }
+        document.getElementById('addBookForm').addEventListener('submit', async (event)=>{
+            event.preventDefault();
+            const BookData = {
+                title: document.getElementById('title').value,
+                author: document.getElementById('author').value,
+                pages: parseInt(document.getElementById('pages').value),
+                status: document.getElementById('status').value
+            };
+            try{
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(BookData)
+                });
+                if(response.ok){
+                    document.getElementById('addBookForm').reset();
+                    fetchBooks();
+                }else{
+                    alert('Failed to add book. It may already exist in the library.');
+                }
+            }
+            catch(error){
+                console.error("Error adding book:", error);
+                alert('An error occurred while adding the book. Please try again.');
+            }
+        });
+        fetchBooks();
+        </script>
+    </body>
